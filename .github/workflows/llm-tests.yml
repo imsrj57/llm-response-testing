@@ -1,0 +1,65 @@
+name: LLM response tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  mock-bot:
+    name: Tests against the mock bot (no API key needed)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest --html=reports/report.html --self-contained-html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report-mock
+          path: reports/report.html
+
+  bad-bot-demo:
+    name: Same tests against a badly-behaved bot (expected to fail)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      LLM_PROVIDER: mock-bad
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest --html=reports/report.html --self-contained-html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report-bad-bot
+          path: reports/report.html
+
+  real-model:
+    name: Tests against a real model (runs only when secrets are set)
+    runs-on: ubuntu-latest
+    if: ${{ vars.LLM_PROVIDER != '' }}
+    env:
+      LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
+      OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt -r requirements-providers.txt
+      - run: pytest --html=reports/report.html --self-contained-html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report-real-model
+          path: reports/report.html
