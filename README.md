@@ -110,3 +110,7 @@ correct answer phrased differently. Next steps I'd add:
 ## Author
 
 Suraj Nair, SDET · [LinkedIn](https://www.linkedin.com/in/imsrj)
+
+## License
+
+[MIT](LICENSE)
